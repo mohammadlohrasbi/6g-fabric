@@ -1,25 +1,37 @@
 #!/bin/bash
 
-# دایرکتوری برای فایل‌های تنظیمات
+# دایرکتوری برای فایل‌های پیکربندی
 mkdir -p config
 
-# تولید فایل core-org*.yaml برای هر سازمان
+# تولید core.yaml برای هر سازمان
 for org in {1..10}; do
-  port=$((7051 + (org-1)*1000))
-  chaincode_port=$((7052 + (org-1)*1000))
-  operations_port=$((9443 + (org-1)*1000))
   cat << EOF > config/core-org${org}.yaml
 peer:
   id: peer0.org${org}.example.com
-  networkId: fabric_network
-  listenAddress: 0.0.0.0:${port}
-  chaincodeListenAddress: 0.0.0.0:${chaincode_port}
-  address: peer0.org${org}.example.com:${port}
+  networkId: dev
+  listenAddress: 0.0.0.0:$((7051 + (org-1)*1000))
+  address: peer0.org${org}.example.com:$((7051 + (org-1)*1000))
+  localMspId: Org${org}MSP
+  mspConfigPath: /etc/hyperledger/fabric/msp
+  tls:
+    enabled: true
+    cert:
+      file: /etc/hyperledger/fabric/tls/server.crt
+    key:
+      file: /etc/hyperledger/fabric/tls/server.key
+    rootcert:
+      file: /etc/hyperledger/fabric/tls/ca.crt
+    clientAuthRequired: false
   gossip:
-    bootstrap: peer0.org${org}.example.com:${port}
-    externalEndpoint: peer0.org${org}.example.com:${port}
     useLeaderElection: true
     orgLeader: false
+    endpoint: peer0.org${org}.example.com:$((7051 + (org-1)*1000))
+    maxBlockCountToStore: 100
+    maxPropagationBurstLatency: 10ms
+    maxPropagationBurstSize: 10
+    propagateIterations: 1
+    propagatePeerNum: 3
+    bootstrap: peer0.org${org}.example.com:$((7051 + (org-1)*1000))
   fileSystemPath: /var/hyperledger/production
   BCCSP:
     Default: SW
@@ -27,66 +39,12 @@ peer:
       Hash: SHA2
       Security: 256
       FileKeyStore:
-        KeyStore: /var/hyperledger/peer/msp/keystore
-  mspConfigPath: /var/hyperledger/peer/msp
-  localMspId: Org${org}MSP
-  tls:
-    enabled: true
-    clientAuthRequired: false
-    cert:
-      file: /var/hyperledger/peer/tls/server.crt
-    key:
-      file: /var/hyperledger/peer/tls/server.key
-    rootcert:
-      file: /var/hyperledger/peer/tls/ca.crt
-    clientRootCAs:
-      - /var/hyperledger/peer/tls/ca.crt
-  chaincode:
-    builder: /var/hyperledger/chaincode-builder
-    pull: true
-    installTimeout: 300s
-    executeTimeout: 30s
-  vm:
-    endpoint: unix:///var/run/docker.sock
-    docker:
-      tls:
-        enabled: false
-      attachStdout: true
-  logging:
-    level: info
-    format: '%{color}%{time:2006-01-02 15:04:05.000 MST} [%{module}] %{shortfunc} -> %{level:.4s} %{id:03x}%{color:reset} %{message}'
-ledger:
-  state:
-    stateDatabase: goleveldb
-    couchDBConfig:
-      couchDBAddress: couchdb:5984
-      username:
-      password:
-      maxRetries: 3
-      maxRetriesOnStartup: 10
-      requestTimeout: 35s
-      createGlobalChangesDB: false
-  history:
-    enableHistoryDatabase: true
-operations:
-  listenAddress: 0.0.0.0:${operations_port}
-  tls:
-    enabled: true
-    cert:
-      file: /var/hyperledger/peer/tls/server.crt
-    key:
-      file: /var/hyperledger/peer/tls/server.key
-    clientAuthRequired: false
-    clientRootCAs:
-      - /var/hyperledger/peer/tls/ca.crt
-metrics:
-  provider: prometheus
-  statsd:
-    network: udp
-    address: 127.0.0.1:8125
-    writeInterval: 10s
-    prefix:
+        KeyStore: /etc/hyperledger/fabric/msp/keystore
+  limits:
+    concurrency:
+      endorserService: 2500
+      deliverService: 2500
 EOF
 done
 
-echo "فایل‌های تنظیمات core-org*.yaml برای 10 سازمان تولید شد."
+echo "Generated core.yaml files for all organizations (core-org1.yaml to core-org10.yaml)"
