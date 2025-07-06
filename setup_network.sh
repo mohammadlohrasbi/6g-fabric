@@ -6,6 +6,14 @@ export FABRIC_CFG_PATH=${PWD}/config
 export CORE_PEER_TLS_ENABLED=true
 export ORDERER_CA=${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
+# بررسی نسخه configtxgen
+echo "Checking configtxgen version..."
+configtxgen --version
+if [ $? -ne 0 ]; then
+  echo "Error: configtxgen not found or not installed correctly"
+  exit 1
+fi
+
 # بررسی وجود فایل configtx.yaml
 if [ ! -f "${FABRIC_CFG_PATH}/configtx.yaml" ]; then
   echo "Error: configtx.yaml not found in ${FABRIC_CFG_PATH}"
