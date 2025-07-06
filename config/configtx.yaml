@@ -205,7 +205,7 @@ Application:
     - *Org8
     - *Org9
     - *Org10
-  Policies:
+  Policies: &ApplicationPolicies
     Readers:
       Type: ImplicitMeta
       Rule: "ANY Readers"
@@ -649,19 +649,3 @@ Profiles:
         <<: *ApplicationCapabilities
       Policies:
         <<: *ApplicationPolicies
-ApplicationPolicies: &ApplicationPolicies
-  Readers:
-    Type: ImplicitMeta
-    Rule: "ANY Readers"
-  Writers:
-    Type: ImplicitMeta
-    Rule: "ANY Writers"
-  Admins:
-    Type: ImplicitMeta
-    Rule: "MAJORITY Admins"
-  LifecycleEndorsement:
-    Type: ImplicitMeta
-    Rule: "MAJORITY Endorsement"
-  Endorsement:
-    Type: ImplicitMeta
-    Rule: "MAJORITY Endorsement"
