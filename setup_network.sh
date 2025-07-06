@@ -6,6 +6,20 @@ export FABRIC_CFG_PATH=${PWD}/config
 export CORE_PEER_TLS_ENABLED=true
 export ORDERER_CA=${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
+# بررسی وجود فایل configtx.yaml
+if [ ! -f "${FABRIC_CFG_PATH}/configtx.yaml" ]; then
+  echo "Error: configtx.yaml not found in ${FABRIC_CFG_PATH}"
+  exit 1
+fi
+
+# بررسی وجود فایل‌های core.yaml
+for org in {1..10}; do
+  if [ ! -f "${FABRIC_CFG_PATH}/core-org${org}.yaml" ]; then
+    echo "Error: core-org${org}.yaml not found in ${FABRIC_CFG_PATH}"
+    exit 1
+  fi
+done
+
 # تابع برای تنظیم هویت سازمان
 setOrg() {
   local org=$1
@@ -17,45 +31,49 @@ setOrg() {
   export CORE_PEER_ADDRESS=peer0.org${org}.example.com:${port}
   export FABRIC_CFG_PATH=${PWD}/config
   export CORE_PEER_FILESYSTEMPATH=/var/hyperledger/production
-  export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
 }
 
 # تولید بلوک جنسیس
+echo "Generating genesis block..."
 configtxgen -profile GeneralGenesis -outputBlock ./genesis.block -configPath ${FABRIC_CFG_PATH}
+if [ $? -ne 0 ]; then
+  echo "Error: Failed to generate genesis block"
+  exit 1
+fi
 
-# تولید کانال‌ها
-for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp {5..19}; do
-  if [[ $channel =~ [0-9] ]]; then
-    channel_name="channelapp${channel}"
-  else
-    channel_name="${channel}"
+# تولید فایل‌های تراکنش کانال‌ها
+for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp channelapp{5..19}; do
+  echo "Generating channel transaction for ${channel}..."
+  configtxgen -profile ${channel^} -outputCreateChannelTx ./${channel}.tx -channelID ${channel} -configPath ${FABRIC_CFG_PATH}
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to generate channel transaction for ${channel}"
+    exit 1
   fi
-  configtxgen -profile ${channel_name^} -outputCreateChannelTx ./${channel_name}.tx -channelID ${channel_name} -configPath ${FABRIC_CFG_PATH}
 done
 
 # راه‌اندازی کانال‌ها
-for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp {5..19}; do
-  if [[ $channel =~ [0-9] ]]; then
-    channel_name="channelapp${channel}"
-  else
-    channel_name="${channel}"
-  fi
+for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp channelapp{5..19}; do
+  echo "Creating channel ${channel}..."
   setOrg 1 peer0.org1.example.com 7051
-  peer channel create -o orderer.example.com:7050 -c ${channel_name} -f ./${channel_name}.tx --tls --cafile $ORDERER_CA
+  peer channel create -o orderer.example.com:7050 -c ${channel} -f ./${channel}.tx --tls --cafile $ORDERER_CA
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to create channel ${channel}"
+    exit 1
+  fi
   for org in {1..10}; do
     port=$((7051 + (org-1)*1000))
     setOrg ${org} peer0.org${org}.example.com ${port}
-    peer channel join -b ${channel_name}.block
+    peer channel join -b ${channel}.block
+    if [ $? -ne 0 ]; then
+      echo "Error: Org${org} failed to join channel ${channel}"
+      exit 1
+    fi
   done
 done
 
 # نصب و راه‌اندازی قراردادهای هوشمند
-for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp {5..19}; do
-  if [[ $channel =~ [0-9] ]]; then
-    channel_name="channelapp${channel}"
-  else
-    channel_name="${channel}"
-  fi
+for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp channelapp{5..19}; do
+  echo "Installing chaincodes on channel ${channel}..."
   # قراردادهای جغرافیایی (10 قرارداد)
   for geo_cc in {1..10}; do
     cc_name="geo_cc${geo_cc}"
@@ -63,8 +81,16 @@ for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchan
       port=$((7051 + (org-1)*1000))
       setOrg ${org} peer0.org${org}.example.com ${port}
       peer chaincode install -n ${cc_name} -v 1.0 -p chaincode/geo_cc${geo_cc}
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to install chaincode ${cc_name} on Org${org}"
+        exit 1
+      fi
       if [ $org -eq 1 ]; then
-        peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C ${channel_name} -n ${cc_name} -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member','Org9MSP.member','Org10MSP.member')"
+        peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C ${channel} -n ${cc_name} -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member','Org9MSP.member','Org10MSP.member')"
+        if [ $? -ne 0 ]; then
+          echo "Error: Failed to instantiate chaincode ${cc_name} on channel ${channel}"
+          exit 1
+        fi
       fi
     done
   done
@@ -75,8 +101,16 @@ for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchan
       port=$((7051 + (org-1)*1000))
       setOrg ${org} peer0.org${org}.example.com ${port}
       peer chaincode install -n ${cc_name} -v 1.0 -p chaincode/public_cc${public_cc}
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to install chaincode ${cc_name} on Org${org}"
+        exit 1
+      fi
       if [ $org -eq 1 ]; then
-        peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C ${channel_name} -n ${cc_name} -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member','Org9MSP.member','Org10MSP.member')"
+        peer chaincode instantiate -o orderer.example.com:7050 --tls --cafile $ORDERER_CA -C ${channel} -n ${cc_name} -v 1.0 -c '{"Args":["init"]}' -P "OR('Org1MSP.member','Org2MSP.member','Org3MSP.member','Org4MSP.member','Org5MSP.member','Org6MSP.member','Org7MSP.member','Org8MSP.member','Org9MSP.member','Org10MSP.member')"
+        if [ $? -ne 0 ]; then
+          echo "Error: Failed to instantiate chaincode ${cc_name} on channel ${channel}"
+          exit 1
+        fi
       fi
     done
   done
