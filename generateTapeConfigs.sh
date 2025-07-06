@@ -1,121 +1,63 @@
 #!/bin/bash
 
-mkdir -p tape-configs
+# دایرکتوری برای فایل‌های پیکربندی
+mkdir -p config
 
-channels=(
-  "generalchannelapp"
-  "securitychannelapp"
-  "monitoringchannelapp"
-  "iotchannelapp"
-  "channelapp5"
-  "channelapp6"
-  "channelapp7"
-  "channelapp8"
-  "channelapp9"
-  "channelapp10"
-  "channelapp11"
-  "channelapp12"
-  "channelapp13"
-  "channelapp14"
-  "channelapp15"
-  "channelapp16"
-  "channelapp17"
-  "channelapp18"
-  "channelapp19"
-)
+# تولید فایل tape-config.yaml
+cat << EOF > config/tape-config.yaml
+network:
+  fabric:
+    topology: config/networkConfig.yaml
+    connectionProfile:
+      path: config/connection-org1.json
+      discover: true
+test:
+  channels:
+EOF
 
-chaincodes=(
-  "GeoBasedAllocation"
-  "AntennaLoadBalancer"
-  "GeoPriorityAssign"
-  "DynamicGeoSwitch"
-  "GeoClusterAssign"
-  "GeoSignalStrength"
-  "GeoLatencyOptimizer"
-  "GeoEnergyEfficient"
-  "GeoMultiAntennaAssign"
-  "GeoPathLossAssign"
-  "ResourceAllocate"
-  "BandwidthShare"
-  "DynamicRouting"
-  "LoadBalance"
-  "UserAuth"
-  "ThreatDetect"
-  "NetworkMonitor"
-  "DataAnalytics"
-  "TransactionAudit"
-  "ComplianceAudit"
-  "FaultDetect"
-  "PredictiveMaintenance"
-  "ResourceMonitor"
-  "QoSMonitor"
-  "LatencyTracker"
-  "EnergyOptimizer"
-  "SecurityAudit"
-  "PolicyEnforcer"
-  "DataIntegrity"
-  "AccessControl"
-  "PerformanceMonitor"
-  "NetworkOptimizer"
-  "TrafficManager"
-  "ServiceAllocator"
-  "IoTManager"
-  "DeviceRegistry"
-  "SignalOptimizer"
-  "ChannelManager"
-  "ResourceScheduler"
-  "FaultTolerance"
-  "DataValidator"
-  "NetworkDiagnostics"
-  "UserManager"
-  "AntennaManager"
-  "ClusterManager"
-  "GeoTracker"
-  "LoadDistributor"
-  "PriorityManager"
-  "DynamicAllocator"
-  "EnergyTracker"
-  "SignalMonitor"
-  "LatencyOptimizer"
-  "PathLossCalculator"
-  "RedundancyManager"
-  "FailoverHandler"
-  "ResourceBalancer"
-  "NetworkPlanner"
-  "IoTController"
-  "SecurityEnforcer"
-  "ComplianceTracker"
-  "AuditManager"
-  "PerformanceAnalyzer"
-  "ServiceTracker"
-  "ResourceController"
-  "NetworkManager"
-  "DataManager"
-)
-
-for channel in "${channels[@]}"; do
-  for chaincode in "${chaincodes[@]}"; do
-    cat << EOF > tape-configs/config_${chaincode}_${channel}.yaml
-target: localhost:7050
-channel: ${channel}
-contractID: ${chaincode}
-ccType: golang
-nProc: 10
-rate: 100
-txDuration: 60
-arguments:
-  chaincodeFunction: AssignResource
-  chaincodeArguments:
-    - resource${RANDOM}
-    - "100"
-    - "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    - "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-query:
-  chaincodeFunction: QueryResource
-  chaincodeArguments:
-    - resource${RANDOM}
+# افزودن کانال‌ها
+for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp {5..19}; do
+  if [[ $channel =~ [0-9] ]]; then
+    channel_name="channelapp${channel}"
+  else
+    channel_name="${channel}"
+  fi
+  cat << EOF >> config/tape-config.yaml
+    - name: ${channel_name}
+      chaincodes:
+EOF
+  # قراردادهای جغرافیایی
+  for geo_cc in {1..10}; do
+    cat << EOF >> config/tape-config.yaml
+        - id: geo_cc${geo_cc}
+          version: v1
+          functions:
+            - name: AssignResource
+              args: ["resourceID", "amount", "start", "end"]
+            - name: QueryResource
+              args: ["resourceID"]
+EOF
+  done
+  # قراردادهای عمومی
+  for public_cc in {1..75}; do
+    cat << EOF >> config/tape-config.yaml
+        - id: public_cc${public_cc}
+          version: v1
+          functions:
+            - name: AssignResource
+              args: ["resourceID", "amount", "start", "end"]
+            - name: QueryResource
+              args: ["resourceID"]
 EOF
   done
 done
 
-echo "Generated Tape configuration files"
+cat << EOF >> config/tape-config.yaml
+tape:
+  host: localhost
+  port: 3000
+  numberOfWorkers: 10
+  tps: 200
+EOF
+
+echo "Generated config/tape-config.yaml"
