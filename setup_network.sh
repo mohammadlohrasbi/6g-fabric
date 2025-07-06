@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # تنظیم متغیرهای محیطی
-export PATH=${PWD}/bin:$PATH
-export FABRIC_CFG_PATH=${PWD}/config
+export PATH=/root/6g-fabric/bin:$PATH
+export FABRIC_CFG_PATH=/root/6g-fabric/config
 export CORE_PEER_TLS_ENABLED=true
-export ORDERER_CA=${PWD}/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
+export ORDERER_CA=/root/6g-fabric/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt
 
 # بررسی نسخه configtxgen
 echo "Checking configtxgen version..."
@@ -12,6 +12,23 @@ configtxgen --version
 if [ $? -ne 0 ]; then
   echo "Error: configtxgen not found or not installed correctly"
   exit 1
+fi
+
+# بررسی FABRIC_CFG_PATH
+echo "FABRIC_CFG_PATH is set to: $FABRIC_CFG_PATH"
+if [ -z "$FABRIC_CFG_PATH" ]; then
+  echo "Error: FABRIC_CFG_PATH is not set"
+  exit 1
+fi
+
+# بررسی وجود دایرکتوری config
+if [ ! -d "$FABRIC_CFG_PATH" ]; then
+  echo "Error: Directory $FABRIC_CFG_PATH does not exist"
+  mkdir -p $FABRIC_CFG_PATH
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to create directory $FABRIC_CFG_PATH"
+    exit 1
+  fi
 fi
 
 # بررسی وجود فایل configtx.yaml
@@ -34,16 +51,16 @@ setOrg() {
   local peer=$2
   local port=$3
   export CORE_PEER_LOCALMSPID="Org${org}MSP"
-  export CORE_PEER_TLS_ROOTCA_FILE=${PWD}/crypto-config/peerOrganizations/org${org}.example.com/peers/peer0.org${org}.example.com/tls/ca.crt
-  export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/org${org}.example.com/users/Admin@org${org}.example.com/msp
+  export CORE_PEER_TLS_ROOTCA_FILE=/root/6g-fabric/crypto-config/peerOrganizations/org${org}.example.com/peers/peer0.org${org}.example.com/tls/ca.crt
+  export CORE_PEER_MSPCONFIGPATH=/root/6g-fabric/crypto-config/peerOrganizations/org${org}.example.com/users/Admin@org${org}.example.com/msp
   export CORE_PEER_ADDRESS=peer0.org${org}.example.com:${port}
-  export FABRIC_CFG_PATH=${PWD}/config
+  export FABRIC_CFG_PATH=/root/6g-fabric/config
   export CORE_PEER_FILESYSTEMPATH=/var/hyperledger/production
 }
 
 # تولید بلوک جنسیس
 echo "Generating genesis block..."
-configtxgen -profile GeneralGenesis -outputBlock ./genesis.block -configPath ${FABRIC_CFG_PATH}
+configtxgen -profile GeneralGenesis -outputBlock /root/6g-fabric/genesis.block -configPath "$FABRIC_CFG_PATH"
 if [ $? -ne 0 ]; then
   echo "Error: Failed to generate genesis block"
   exit 1
@@ -52,7 +69,7 @@ fi
 # تولید فایل‌های تراکنش کانال‌ها
 for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp channelapp{5..19}; do
   echo "Generating channel transaction for ${channel}..."
-  configtxgen -profile ${channel^} -outputCreateChannelTx ./${channel}.tx -channelID ${channel} -configPath ${FABRIC_CFG_PATH}
+  configtxgen -profile ${channel^} -outputCreateChannelTx /root/6g-fabric/${channel}.tx -channelID ${channel} -configPath "$FABRIC_CFG_PATH"
   if [ $? -ne 0 ]; then
     echo "Error: Failed to generate channel transaction for ${channel}"
     exit 1
@@ -63,7 +80,7 @@ done
 for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp channelapp{5..19}; do
   echo "Creating channel ${channel}..."
   setOrg 1 peer0.org1.example.com 7051
-  peer channel create -o orderer.example.com:7050 -c ${channel} -f ./${channel}.tx --tls --cafile $ORDERER_CA
+  peer channel create -o orderer.example.com:7050 -c ${channel} -f /root/6g-fabric/${channel}.tx --tls --cafile $ORDERER_CA
   if [ $? -ne 0 ]; then
     echo "Error: Failed to create channel ${channel}"
     exit 1
