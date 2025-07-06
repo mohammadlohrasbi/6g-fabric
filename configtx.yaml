@@ -276,9 +276,20 @@ Profiles:
     Capabilities:
       <<: *ChannelCapabilities
     Orderer:
-      <<: *Orderer
+      OrdererType: etcdraft
       Addresses:
         - orderer.example.com:7050
+      BatchTimeout: 2s
+      BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.example.com
+            Port: 7050
+            ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+            ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
       Organizations:
         - *OrdererOrg
       Capabilities:
@@ -299,7 +310,6 @@ Profiles:
   GeneralChannelApp:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -313,10 +323,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   SecurityChannelApp:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -330,10 +341,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   MonitoringChannelApp:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -347,10 +359,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   IoTChannelApp:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -364,10 +377,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp5:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -381,10 +395,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp6:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -398,10 +413,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp7:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -415,10 +431,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp8:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -432,10 +449,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp9:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -449,10 +467,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp10:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -466,10 +485,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp11:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -483,10 +503,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp12:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -500,10 +521,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp13:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -517,10 +539,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp14:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -534,10 +557,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp15:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -551,10 +575,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp16:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -568,10 +593,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp17:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -585,10 +611,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp18:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -602,10 +629,11 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
   ChannelApp19:
     Consortium: SampleConsortium
     Application:
-      <<: *Application
       Organizations:
         - *Org1
         - *Org2
@@ -619,3 +647,21 @@ Profiles:
         - *Org10
       Capabilities:
         <<: *ApplicationCapabilities
+      Policies:
+        <<: *ApplicationPolicies
+ApplicationPolicies: &ApplicationPolicies
+  Readers:
+    Type: ImplicitMeta
+    Rule: "ANY Readers"
+  Writers:
+    Type: ImplicitMeta
+    Rule: "ANY Writers"
+  Admins:
+    Type: ImplicitMeta
+    Rule: "MAJORITY Admins"
+  LifecycleEndorsement:
+    Type: ImplicitMeta
+    Rule: "MAJORITY Endorsement"
+  Endorsement:
+    Type: ImplicitMeta
+    Rule: "MAJORITY Endorsement"
