@@ -15,10 +15,13 @@ setOrg() {
   export CORE_PEER_TLS_ROOTCA_FILE=${PWD}/crypto-config/peerOrganizations/org${org}.example.com/peers/peer0.org${org}.example.com/tls/ca.crt
   export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/org${org}.example.com/users/Admin@org${org}.example.com/msp
   export CORE_PEER_ADDRESS=peer0.org${org}.example.com:${port}
+  export FABRIC_CFG_PATH=${PWD}/config
+  export CORE_PEER_FILESYSTEMPATH=/var/hyperledger/production
+  export CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
 }
 
 # تولید بلوک جنسیس
-configtxgen -profile GeneralGenesis -outputBlock ./genesis.block
+configtxgen -profile GeneralGenesis -outputBlock ./genesis.block -configPath ${FABRIC_CFG_PATH}
 
 # تولید کانال‌ها
 for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchannelapp {5..19}; do
@@ -27,7 +30,7 @@ for channel in generalchannelapp securitychannelapp monitoringchannelapp iotchan
   else
     channel_name="${channel}"
   fi
-  configtxgen -profile ${channel_name^} -outputCreateChannelTx ./${channel_name}.tx -channelID ${channel_name}
+  configtxgen -profile ${channel_name^} -outputCreateChannelTx ./${channel_name}.tx -channelID ${channel_name} -configPath ${FABRIC_CFG_PATH}
 done
 
 # راه‌اندازی کانال‌ها
