@@ -63,7 +63,7 @@ echo "Generating genesis block..."
 configtxgen -profile GeneralGenesis -outputBlock /root/6g-fabric/genesis.block -configPath "$FABRIC_CFG_PATH"
 if [ $? -ne 0 ]; then
   echo "Error: Failed to generate genesis block"
-  configtxgen -profile GeneralGenesis -outputBlock /root/6g-fabric/genesis.block -configPath "$FABRIC_CFG_PATH" --debug
+  echo "Please check the configtx.yaml file and ensure it matches the expected format."
   exit 1
 fi
 
